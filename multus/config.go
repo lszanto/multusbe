@@ -7,7 +7,9 @@ import (
 
 // Config stores application config
 type Config struct {
-	DBString string `json:"db_string"`
+	DBEngine  string `json:"db_engine"`
+	DBString  string `json:"db_string"`
+	SecretKey []byte `json:"key"`
 }
 
 // LoadConfig returns loaded config file
