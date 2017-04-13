@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lszanto/multusbe/models"
@@ -54,7 +56,8 @@ func (handler DocHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 // Exists checks the document title to see if it exists
 func (handler DocHandler) Exists(w http.ResponseWriter, r *http.Request) {
-	docTitle := chi.URLParam(r, "title")
+	docTitle, _ := url.QueryUnescape(chi.URLParam(r, "title"))
+	docTitle = strings.ToLower(docTitle)
 
 	var doc models.Doc
 	result := true
