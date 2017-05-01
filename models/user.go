@@ -6,6 +6,6 @@ import "github.com/lszanto/multusbe/multus"
 type User struct {
 	multus.Model
 	Username string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"email"`
-	Password string `json:"-" validate:"required"`
+	Email    string `json:"email" validate:"email" gorm:"unique"`
+	Password string `json:"password" validate:"required"`
 }
