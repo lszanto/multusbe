@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -33,7 +32,7 @@ func (handler DocHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	err := validate.Struct(doc)
 	if err != nil {
-		response.JSON(w, response.Result{Result: "Error Creating"}, http.StatusNotAcceptable)
+		response.JSON(w, response.Result{Error: "Error creating document"}, http.StatusNotAcceptable)
 		return
 	}
 
@@ -41,30 +40,17 @@ func (handler DocHandler) Create(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, response.Result{Result: "Document Created"}, http.StatusCreated)
 }
 
-// GetByID fetches a document given the ID
-func (handler DocHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	docID, _ := strconv.Atoi(chi.URLParam(r, "id"))
-	var doc models.Doc
-
-	if err := handler.DB.First(&doc, docID).Error; err != nil {
-		response.JSON(w, response.Result{Result: "Document not found"}, http.StatusNotFound)
-		return
-	}
-
-	response.JSON(w, doc, http.StatusOK)
-}
-
-// Exists checks the document title to see if it exists
-func (handler DocHandler) Exists(w http.ResponseWriter, r *http.Request) {
+// Get fetches a document given the title
+func (handler DocHandler) Get(w http.ResponseWriter, r *http.Request) {
 	docTitle, _ := url.QueryUnescape(chi.URLParam(r, "title"))
 	docTitle = strings.ToLower(docTitle)
 
 	var doc models.Doc
-	result := true
 
 	if err := handler.DB.Where("title = ?", docTitle).First(&doc).Error; err != nil {
-		result = false
+		response.JSON(w, response.Result{Error: "Document not found"}, http.StatusNotFound)
+		return
 	}
 
-	response.JSON(w, response.Result{Result: result}, http.StatusOK)
+	response.JSON(w, doc, http.StatusOK)
 }
