@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/goware/cors"
 	"github.com/jinzhu/gorm"
 	"github.com/lszanto/multusbe/handlers"
 	"github.com/lszanto/multusbe/multus"
@@ -19,6 +21,9 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	// db.AutoMigrate(&models.User{})
+	// db.AutoMigrate(&models.Doc{})
 
 	// // Create a new token object, specifying signing method and the claims
 	// // you would like it to contain.
@@ -44,6 +49,19 @@ func main() {
 
 	r := chi.NewRouter()
 
+	// Basic CORS
+	// for more ideas, see: https://developer.github.com/v3/#cross-origin-resource-sharing
+	cors := cors.New(cors.Options{
+		// AllowedOrigins: []string{"https://foo.com"}, // Use this to allow specific origin hosts
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	})
+	r.Use(cors.Handler)
+
 	// apply middleware
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -56,14 +74,15 @@ func main() {
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/doc", func(r chi.Router) {
 			r.Post("/", docHandler.Create)
-			r.Get("/:id", docHandler.GetByID)
-			r.Get("/exists/:title", docHandler.Exists)
+			r.Get("/:title", docHandler.Get)
 		})
 
 		r.Route("/user", func(r chi.Router) {
 			r.Post("/login", userHandler.Login)
+			r.Post("/create", userHandler.Create)
 		})
 	})
 
+	fmt.Println("Server to listen on port :3000")
 	http.ListenAndServe(":3000", r)
 }
