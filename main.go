@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +17,12 @@ import (
 )
 
 func main() {
+	serverPort := flag.String("port", "9000", "Multus Server Port")
+	createConfigFile := flag.Bool("create_config", false, "Create server config on init")
+
+	if createConfigFile {
+
+	}
 
 	config := multus.LoadConfig("config.json")
 	db, err := gorm.Open(config.DBEngine, config.DBString)
@@ -63,6 +70,6 @@ func main() {
 		})
 	})
 
-	fmt.Println("Server to listen on port :3000")
-	http.ListenAndServe(":3000", r)
+	fmt.Println("Multus server listening on port :" + *serverPort)
+	http.ListenAndServe(":"+*serverPort, r)
 }
