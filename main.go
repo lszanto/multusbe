@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goware/cors"
 	"github.com/jinzhu/gorm"
@@ -15,6 +16,7 @@ import (
 )
 
 func main() {
+
 	config := multus.LoadConfig("config.json")
 	db, err := gorm.Open(config.DBEngine, config.DBString)
 	if err != nil {
@@ -22,30 +24,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// db.AutoMigrate(&models.User{})
-	// db.AutoMigrate(&models.Doc{})
-
-	// // Create a new token object, specifying signing method and the claims
-	// // you would like it to contain.
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-	// 	"foo": "bar",
-	// 	"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
-	// })
-
-	// // Sign and get the complete encoded token as a string using the secret
-	// tokenString, err := token.SignedString(config.SecretKey)
-
-	// // fmt.Println(tokenString, err)
-	// fmt.Println("create model")
-	// user := models.User{}
-	// user.Username = "luke"
-	// user.Email = "luke.found@gmail.com"
-	// user.Password = "cools"
-	// hash, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	// user.Password = string(hash)
-	// fmt.Println("creating user")
-	// db.Create(&user)
-	// fmt.Println("Created")
+	mc := memcache.New(config.MemString[0])
 
 	r := chi.NewRouter()
 
@@ -69,7 +48,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	docHandler := handlers.NewDocHandler(db)
-	userHandler := handlers.NewUserHandler(db)
+	userHandler := handlers.NewUserHandler(db, config)
+	authHandler := handlers.NewAuthHandler(db, config, mc)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/doc", func(r chi.Router) {
@@ -78,7 +58,7 @@ func main() {
 		})
 
 		r.Route("/user", func(r chi.Router) {
-			r.Post("/login", userHandler.Login)
+			r.Post("/login", authHandler.Login)
 			r.Post("/create", userHandler.Create)
 		})
 	})
