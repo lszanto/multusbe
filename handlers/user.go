@@ -9,18 +9,20 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/lszanto/multusbe/models"
+	"github.com/lszanto/multusbe/multus"
 	"github.com/lszanto/multusbe/response"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // UserHandler handles user activity
 type UserHandler struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	Config multus.Config
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(db *gorm.DB) UserHandler {
-	return UserHandler{DB: db}
+func NewUserHandler(db *gorm.DB, config multus.Config) UserHandler {
+	return UserHandler{DB: db, Config: config}
 }
 
 // Create makes a new user
@@ -51,25 +53,4 @@ func (handler UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, response.Result{Result: "User created"}, http.StatusCreated)
-}
-
-// Login allows the user to login
-func (handler UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var attempt models.User
-	json.NewDecoder(r.Body).Decode(&attempt)
-
-	var user models.User
-
-	if err := handler.DB.Where("username = ?", attempt.Username).First(&user).Error; err != nil {
-		response.JSON(w, response.Result{Error: "Could not login"}, http.StatusNotFound)
-		return
-	}
-
-	// check that hashes match
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(attempt.Password)); err != nil {
-		response.JSON(w, response.Result{Error: "Coult not login"}, http.StatusNotFound)
-		return
-	}
-
-	response.JSON(w, response.Result{Result: "Logged in"}, http.StatusCreated)
 }
