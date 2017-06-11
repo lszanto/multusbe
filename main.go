@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bradfitz/gomemcache/memcache"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goware/cors"
 	"github.com/jinzhu/gorm"
@@ -31,8 +30,6 @@ func main() {
 	}
 	defer db.Close()
 
-	mc := memcache.New(config.MemString[0])
-
 	r := chi.NewRouter()
 
 	// Basic CORS
@@ -56,7 +53,7 @@ func main() {
 
 	docHandler := handlers.NewDocHandler(db)
 	userHandler := handlers.NewUserHandler(db, config)
-	authHandler := handlers.NewAuthHandler(db, config, mc)
+	authHandler := handlers.NewAuthHandler(db, config)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/doc", func(r chi.Router) {

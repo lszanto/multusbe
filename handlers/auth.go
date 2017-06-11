@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/lszanto/multusbe/models"
@@ -19,12 +18,11 @@ import (
 type AuthHandler struct {
 	DB     *gorm.DB
 	Config multus.Config
-	Cache  *memcache.Client
 }
 
 // NewAuthHandler creates a new user handler
-func NewAuthHandler(db *gorm.DB, config multus.Config, mc *memcache.Client) AuthHandler {
-	return AuthHandler{DB: db, Config: config, Cache: mc}
+func NewAuthHandler(db *gorm.DB, config multus.Config) AuthHandler {
+	return AuthHandler{DB: db, Config: config}
 }
 
 // Login allows the user to login
@@ -57,9 +55,6 @@ func (handler AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(handler.Config.SecretKey)
-
-	// set their key against memcache
-	handler.Cache.Add(&memcache.Item{Key: tokenString, Value: []byte(fmt.Sprint(user.ID))})
 
 	if err != nil {
 		response.JSON(w, response.Result{Error: "Coult not login"}, http.StatusBadRequest)
